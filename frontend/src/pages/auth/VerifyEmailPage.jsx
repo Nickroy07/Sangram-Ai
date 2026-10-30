@@ -3,10 +3,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useToast } from '../../context/ToastContext';
 import { Button } from '../../components/common/Button';
 import { Logo } from '../../components/common/Logo';
+import { authApi } from '../../services/api';
 
 export const VerifyEmailPage = () => {
   const [code, setCode] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const { showToast } = useToast();
   const navigate = useNavigate();
 
@@ -23,18 +25,18 @@ export const VerifyEmailPage = () => {
     }
   };
 
-  const handleVerify = (e) => {
+  const handleVerify = async (e) => {
     e.preventDefault();
+    setError('');
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      showToast('Email verified successfully! (simulated)', 'success');
-      navigate('/onboarding');
-    }, 600);
+    try { await authApi.verifyEmail(code.join('')); showToast('Email verified successfully.', 'success'); navigate('/onboarding'); }
+    catch (err) { setError(err.message); }
+    finally { setLoading(false); }
   };
 
-  const handleResend = () => {
-    showToast('New 6-digit verification code sent to your inbox.', 'info');
+  const handleResend = async () => {
+    try { await authApi.resendVerification(); showToast('A new verification code was sent.', 'success'); }
+    catch (err) { setError(err.message); }
   };
 
   return (
@@ -50,6 +52,7 @@ export const VerifyEmailPage = () => {
       </div>
 
       <form onSubmit={handleVerify} className="verify-form">
+        {error && <div className="auth-alert error-alert" role="alert">{error}</div>}
         <div className="digit-inputs-row">
           {code.map((digit, idx) => (
             <input

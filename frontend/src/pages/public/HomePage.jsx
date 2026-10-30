@@ -1,12 +1,32 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { models } from '../../data/models';
-import { mockFaqs } from '../../data/mockFaqs';
-import { plans } from '../../data/mockPlans';
+import { faqs } from '../../data/faqs';
+import { billingApi, catalogApi } from '../../services/api';
 import { Button } from '../../components/common/Button';
 
 export const HomePage = () => {
   const [activeFaq, setActiveFaq] = useState(0);
+  const [models, setModels] = useState([]);
+  const [plans, setPlans] = useState([]);
+  const [catalogError, setCatalogError] = useState('');
+
+  useEffect(() => {
+    Promise.all([catalogApi.models(), billingApi.plans()])
+      .then(([modelCatalog, planCatalog]) => {
+        setModels(modelCatalog);
+        setPlans(planCatalog.map((plan) => ({
+          ...plan,
+          tagline: plan.description,
+          price: { monthly: plan.pricing.monthlyCents / 100 },
+          period: '/ month',
+          popular: plan.id === 'pro',
+          features: plan.features.slice(0, 4).map((text) => ({ text, included: true })),
+          cta: plan.id === 'free' ? 'Start Free' : `Choose ${plan.name}`,
+          ctaLink: plan.id === 'free' ? '/auth/signup' : `/checkout?plan=${plan.id}&interval=monthly`,
+        })));
+      })
+      .catch((error) => setCatalogError(error.message));
+  }, []);
 
   const benefits = [
     {
@@ -48,7 +68,7 @@ export const HomePage = () => {
     {
       step: '04',
       title: 'Receive Synthesis',
-      desc: 'Review a unified verdict with a consensus score, trade-off breakdown, and copy it directly to your workflow.'
+      desc: 'Review the written synthesis and trade-offs, then copy the result into your workflow.'
     }
   ];
 
@@ -106,35 +126,19 @@ export const HomePage = () => {
             </a>
           </div>
 
-          {/* Prototype Badge & Direct Link to Standalone NEURAL Template */}
+          {/* Product availability */}
           <div className="hero-meta-row">
             <span className="hero-proto-label">
               <span className="demo-dot" aria-hidden="true" />
-              Demo Mode · Simulated responses — frontend prototype
+              Live model debates, with provider availability shown in your workspace
             </span>
-            <a
-              href="/neural-landing.html"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="neural-link-pill"
-              title="Open the standalone Motion Series / NEURAL template"
-            >
-              <span>NEURAL Template</span>
-              <svg width="11" height="10" viewBox="0 0 10 9" fill="none" stroke="currentColor" strokeWidth="1.4" aria-hidden="true">
-                <path d="M0 4.5 H9.1 M5.4 0.9 L9.2 4.5 L5.4 8.1"/>
-              </svg>
-            </a>
+            <Link to="/features" className="neural-link-pill" title="Explore Sangram AI features"><span>Explore features</span><span aria-hidden="true">?</span></Link>
           </div>
 
           <div className="hero-trust-row mt-6">
             <span className="trust-label">Compatible with leading foundational model profiles:</span>
             <div className="trust-model-chips">
-              <span className="t-chip">ChatGPT</span>
-              <span className="t-chip">Claude</span>
-              <span className="t-chip">Gemini</span>
-              <span className="t-chip">Llama</span>
-              <span className="t-chip">Mistral</span>
-              <span className="t-chip">DeepSeek</span>
+              {models.map((model) => <span className="t-chip" key={model.id}>{model.name}</span>)}
             </div>
           </div>
         </div>
@@ -144,7 +148,7 @@ export const HomePage = () => {
       <section className="section-arena-visual">
         <div className="section-container">
           <div className="section-header text-center">
-            <span className="section-tag">LIVE DEMONSTRATION</span>
+            <span className="section-tag">HOW THE ARENA WORKS</span>
             <h2 className="section-title">The Dialectic Arena in Action</h2>
             <p className="section-desc">
               Two models examine: <em>"Should an early-stage B2B SaaS adopt Microservices or a Modular Monolith?"</em>
@@ -156,7 +160,7 @@ export const HomePage = () => {
             <div className="arena-card-topbar">
               <div className="arena-status-group">
                 <span className="status-live-dot"></span>
-                <span className="status-live-text">ROUND 2 OF 3 · CROSS-EXAMINATION</span>
+                <span className="status-live-text">EXAMPLE DEBATE · CROSS-EXAMINATION</span>
               </div>
               <div className="arena-model-pills">
                 <span className="model-pill pill-gpt">ChatGPT (GPT-4o)</span>
@@ -205,7 +209,7 @@ export const HomePage = () => {
                   <span className="verdict-star">★</span>
                   <h4 className="verdict-heading">Consolidated Dialectic Verdict</h4>
                 </div>
-                <span className="confidence-pill">94% Consensus Score</span>
+                <span className="confidence-pill">Synthesis preview</span>
               </div>
               <div className="verdict-body">
                 <p className="verdict-takeaway">
@@ -281,19 +285,20 @@ export const HomePage = () => {
             </p>
           </div>
 
+          {catalogError && <p className="auth-alert error-alert" role="alert">{catalogError}</p>}
           <div className="models-showcase-grid">
             {models.map((m) => (
               <div key={m.id} className="showcase-model-card">
                 <div className="model-card-top">
-                  <span className="m-accent-dot" style={{ backgroundColor: m.accent.color }}></span>
+                  <span className="m-accent-dot" style={{ backgroundColor: m.accent?.color || '#5B9DFF' }}></span>
                   <span className="m-name">{m.name}</span>
                   <span className="m-badge">{m.provider}</span>
                 </div>
                 <div className="m-version">{m.modelLabel}</div>
                 <p className="m-desc">{m.desc}</p>
                 <div className="m-footer">
-                  <span className="m-status-text">Ready in Arena</span>
-                  <Link to="/app/arena" className="m-select-btn">Deploy →</Link>
+                  <span className="m-status-text">{m.is_available ? 'Available' : 'Provider key required'}</span>
+                  <Link to={m.is_available ? ("/app/arena/new?m1=" + m.id) : "/models"} className="m-select-btn">{m.is_available ? "Configure" : "Details"}</Link>
                 </div>
               </div>
             ))}
@@ -307,9 +312,10 @@ export const HomePage = () => {
           <div className="section-header text-center">
             <span className="section-tag">TRANSPARENT PLANS</span>
             <h2 className="section-title">Built for Engineers, Researchers, and Teams</h2>
-            <p className="section-desc">Choose a tier that matches your dialectic volume.</p>
+            <p className="section-desc">Compare the current plan catalog. Paid subscriptions are not available yet.</p>
           </div>
 
+          {catalogError && <p className="auth-alert error-alert" role="alert">{catalogError}</p>}
           <div className="pricing-cards-grid">
             {plans.slice(0, 3).map((plan) => (
               <div key={plan.id} className={`pricing-card ${plan.popular ? 'card-featured' : ''}`}>
@@ -328,11 +334,7 @@ export const HomePage = () => {
                     </li>
                   ))}
                 </ul>
-                <Link to={plan.ctaLink} className="plan-cta-wrapper">
-                  <Button variant={plan.popular ? 'primary' : 'outline'} className="w-full">
-                    {plan.cta}
-                  </Button>
-                </Link>
+                {plan.id === 'free' ? <Link to={plan.ctaLink} className="plan-cta-wrapper"><Button variant="outline" className="w-full">{plan.cta}</Button></Link> : <Button variant="outline" className="w-full" disabled>Payments unavailable</Button>}
               </div>
             ))}
           </div>
@@ -355,7 +357,7 @@ export const HomePage = () => {
           </div>
 
           <div className="faq-accordion-list">
-            {mockFaqs.slice(0, 5).map((faq, index) => {
+            {faqs.slice(0, 5).map((faq, index) => {
               const isOpen = activeFaq === index;
               return (
                 <div key={index} className={`faq-item ${isOpen ? 'open' : ''}`}>
@@ -407,3 +409,4 @@ export const HomePage = () => {
     </div>
   );
 };
+

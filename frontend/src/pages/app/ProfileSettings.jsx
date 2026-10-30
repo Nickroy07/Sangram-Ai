@@ -1,25 +1,25 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { userApi } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import { Button } from '../../components/common/Button';
 
 export const ProfileSettings = () => {
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
   const { showToast } = useToast();
 
-  const [name, setName] = useState(user?.name || 'Alex Vance');
-  const [email, setEmail] = useState(user?.email || 'alex.vance@sangram.ai');
-  const [role, setRole] = useState(user?.role || 'Lead AI Architect');
+  const [name, setName] = useState(user?.name || '');
+  const [email] = useState(user?.email || '');
+  const [role, setRole] = useState(user?.occupation || '');
   const [loading, setLoading] = useState(false);
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      showToast('Profile parameters updated successfully!', 'success');
-    }, 400);
+    try { const updated = await userApi.updateProfile({ name, occupation: role }); setUser(updated); showToast('Profile updated.', 'success'); }
+    catch (err) { showToast(err.message, 'error'); }
+    finally { setLoading(false); }
   };
 
   return (
@@ -54,14 +54,7 @@ export const ProfileSettings = () => {
               {name ? name.charAt(0).toUpperCase() : 'A'}
             </div>
             <div>
-              <button
-                type="button"
-                className="clean-text-btn"
-                onClick={() => showToast('Avatar upload simulated.', 'info')}
-              >
-                Change Avatar Image
-              </button>
-              <span className="text-muted text-xs block mt-1">PNG, JPG up to 2MB.</span>
+              <span className="text-muted text-xs block mt-1">Avatar upload is not available yet.</span>
             </div>
           </div>
 
@@ -83,7 +76,7 @@ export const ProfileSettings = () => {
                 type="email"
                 className="clean-input mt-1"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                readOnly
                 required
               />
             </div>

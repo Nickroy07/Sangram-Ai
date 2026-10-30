@@ -137,3 +137,9 @@ class ConfirmEmailChangeRequest(BaseSchema):
     """Confirm with the code sent to the new address."""
 
     code: str = Field(..., min_length=4, max_length=12)
+
+
+class GoogleLoginRequest(BaseSchema):
+    """Google Sign-In credential issued by Google Identity Services."""
+
+    credential: str = Field(..., min_length=10, description="Google ID Token (JWT)")

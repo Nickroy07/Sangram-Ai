@@ -1,9 +1,12 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { models } from '../../data/models';
+import { catalogApi } from '../../services/api';
 import { Button } from '../../components/common/Button';
 
 export const AppModelsPage = () => {
+  const [models, setModels] = useState([]);
+  const [error, setError] = useState('');
+  useEffect(() => { catalogApi.models().then(setModels).catch((err) => setError(err.message)); }, []);
   return (
     <div className="app-models-view">
       <div className="page-header-row">
@@ -21,6 +24,7 @@ export const AppModelsPage = () => {
       </div>
 
       <div className="models-clean-grid mt-6">
+        {error && <p className="auth-alert error-alert" role="alert">{error}</p>}
         {models.map((m) => (
           <div key={m.id} className="model-clean-card">
             <div className="model-clean-header">
@@ -31,7 +35,7 @@ export const AppModelsPage = () => {
                   <span className="model-clean-provider">{m.provider} · {m.modelLabel}</span>
                 </div>
               </div>
-              <span className="simulated-status-pill">Simulated Node</span>
+              <span className={`simulated-status-pill ${m.is_available ? 'available' : ''}`}>{m.is_available ? 'Available' : 'Provider key required'}</span>
             </div>
 
             <p className="model-clean-desc">{m.desc}</p>
@@ -43,7 +47,7 @@ export const AppModelsPage = () => {
               </div>
               <div className="spec-item">
                 <span className="spec-k">Status:</span>
-                <span className="spec-v text-cyan">Available in Arena</span>
+                <span className={`spec-v ${m.is_available ? 'text-cyan' : ''}`}>{m.is_available ? 'Available in Arena' : 'Not configured'}</span>
               </div>
             </div>
 

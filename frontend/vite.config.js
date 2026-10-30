@@ -11,8 +11,7 @@ export default defineConfig({
     allowedHosts: true,
     headers: {
       'X-Frame-Options': 'ALLOWALL'
-    },
-    hmr: false
+    }
   },
   preview: {
     host: '0.0.0.0',

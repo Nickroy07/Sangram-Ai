@@ -69,10 +69,14 @@ def create_app() -> FastAPI:
     # Middleware Stack (Execution order is bottom-to-top on request)
     # --------------------------------------------------------------------------
 
-    # 1. CORS Configuration (Explicit development origins)
+    # 1. CORS Configuration (Explicit origins + FRONTEND_URL)
+    allowed_origins = list(settings.ALLOWED_ORIGINS)
+    if settings.FRONTEND_URL and settings.FRONTEND_URL not in allowed_origins:
+        allowed_origins.append(settings.FRONTEND_URL)
+
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=settings.ALLOWED_ORIGINS,
+        allow_origins=allowed_origins,
         allow_credentials=True,
         allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
         allow_headers=[

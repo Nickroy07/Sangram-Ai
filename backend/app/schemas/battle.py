@@ -89,6 +89,7 @@ class Battle(BaseSchema):
     """
 
     id: str = Field(..., description="Unique battle ID")
+    status: str = Field("completed", description="pending, running, completed, or failed")
     question: str = Field(..., description="The user dilemma or prompt debated")
     fighters: List[BattleFighter] = Field(..., min_length=2, max_length=2, description="The two combatant fighters")
     messages: List[BattleMessage] = Field(..., description="Chronological shared debate timeline turns")

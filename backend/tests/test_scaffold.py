@@ -26,8 +26,8 @@ async def test_scaffold_route_requires_auth_before_501(async_client: AsyncClient
 
 
 @pytest.mark.asyncio
-async def test_scaffold_battle_create_returns_501(auth_client: AsyncClient):
-    """Authenticated call to unintegrated battle creation returns 501 MODULE_NOT_IMPLEMENTED."""
+async def test_battle_create_fails_closed_when_selected_provider_is_not_configured(auth_client: AsyncClient):
+    """Battle creation reports a missing provider key instead of returning fake success."""
     response = await auth_client.post(
         "/api/battles",
         json={
@@ -36,10 +36,10 @@ async def test_scaffold_battle_create_returns_501(auth_client: AsyncClient):
             "modelB": "claude",
         },
     )
-    assert response.status_code == 501
+    assert response.status_code == 422
     data = response.json()
-    assert data["code"] == "MODULE_NOT_IMPLEMENTED"
-    assert "Developer 4" in data["message"]
+    assert data["code"] == "VALIDATION_ERROR"
+    assert "not configured" in data["message"]
 
 
 @pytest.mark.asyncio

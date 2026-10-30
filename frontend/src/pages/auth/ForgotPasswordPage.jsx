@@ -4,6 +4,7 @@ import { useToast } from '../../context/ToastContext';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 import { Logo } from '../../components/common/Logo';
+import { authApi } from '../../services/api';
 
 export const ForgotPasswordPage = () => {
   const [email, setEmail] = useState('');
@@ -12,7 +13,7 @@ export const ForgotPasswordPage = () => {
   const [error, setError] = useState('');
   const { showToast } = useToast();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
@@ -22,11 +23,12 @@ export const ForgotPasswordPage = () => {
     }
 
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      await authApi.forgotPassword(email);
       setSubmitted(true);
-      showToast(`Password reset link dispatched to ${email}`, 'success');
-    }, 600);
+      showToast('If the account exists, reset instructions have been sent.', 'success');
+    } catch (err) { setError(err.message); }
+    finally { setLoading(false); }
   };
 
   return (
@@ -49,18 +51,14 @@ export const ForgotPasswordPage = () => {
             We have sent password recovery instructions to <strong>{email}</strong>. Please check your spam folder if it doesn't appear in 2 minutes.
           </p>
           <div className="mt-4 flex flex-col gap-2">
-            <Link to="/auth/reset-password?token=mock_token_123">
-              <Button variant="secondary" className="w-full">
-                Simulate Clicking Reset Link →
-              </Button>
-            </Link>
-            <Link to="/auth/login" className="back-link block text-center mt-2">
+            <p className="text-muted">Use the secure link sent to your email to choose a new password.</p>\r\n            <Link to="/auth/login" className="back-link block text-center mt-2">
               ← Return to Login
             </Link>
           </div>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="auth-form" noValidate>
+          {error && <div className="auth-alert error-alert" role="alert">{error}</div>}
           {error && (
             <div className="auth-alert error-alert" role="alert">
               <span>⚠ {error}</span>
@@ -96,3 +94,4 @@ export const ForgotPasswordPage = () => {
     </div>
   );
 };
+

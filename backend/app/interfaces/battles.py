@@ -67,7 +67,7 @@ class IBattleStreamService(Protocol):
     """Streams real-time debate turns and synthesis via Server-Sent Events (SSE)."""
 
     async def stream_events(
-        self, battle_id: str, last_event_id: Optional[str] = None
+        self, battle_id: str, last_event_id: Optional[str] = None, user_id: Optional[str] = None
     ) -> AsyncGenerator[Tuple[str, str], None]:
         """Yields (event_name, json_data) tuples matching BACKEND_CONTRACT.md.
         

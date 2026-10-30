@@ -1,0 +1,23 @@
+# robots.txt for Sangram AI (https://sangramai.tech)
+User-agent: *
+Allow: /
+Allow: /home
+Allow: /features
+Allow: /how-it-works
+Allow: /models
+Allow: /pricing
+Allow: /about
+Allow: /faq
+Allow: /contact
+Allow: /privacy
+Allow: /terms
+Allow: /refund-policy
+Allow: /cookie-policy
+
+# Protect authenticated user areas from indexation
+Disallow: /app/
+Disallow: /auth/
+Disallow: /checkout/
+Disallow: /onboarding
+
+Sitemap: https://sangramai.tech/sitemap.xml

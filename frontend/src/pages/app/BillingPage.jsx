@@ -1,122 +1,25 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { mockBillingService } from '../../services/mock/mockBillingService';
-import { useToast } from '../../context/ToastContext';
-import { Button } from '../../components/common/Button';
+import React, { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { billingApi } from '../../services/api'
+import { useAuth } from '../../context/AuthContext'
+import { Button } from '../../components/common/Button'
 
 export const BillingPage = () => {
-  const [invoices, setInvoices] = useState([]);
-  const { showToast } = useToast();
-
+  const { user } = useAuth()
+  const [invoices, setInvoices] = useState([])
+  const [subscription, setSubscription] = useState(null)
+  const [error, setError] = useState('')
   useEffect(() => {
-    const load = async () => {
-      const inv = await mockBillingService.getInvoices();
-      setInvoices(inv);
-    };
-    load();
-  }, []);
-
-  const handleDownloadInvoice = (id) => {
-    showToast(`Downloading receipt for ${id} (simulated PDF)...`, 'info');
-  };
-
-  return (
-    <div className="billing-page-view">
-      <div className="page-header-row">
-        <div>
-          <h1 className="page-title">Billing & Subscriptions</h1>
-          <p className="page-sub">Manage your plan, payment methods, and invoice history.</p>
-        </div>
-        <div className="flex gap-2">
-          <Link to="/pricing">
-            <Button variant="primary">Change Plan</Button>
-          </Link>
-        </div>
-      </div>
-
-      {/* Current Plan Overview Card */}
-      <div className="current-plan-box mt-6">
-        <div className="plan-header-row">
-          <div>
-            <span className="clean-tag-active">ACTIVE SUBSCRIPTION</span>
-            <h2 className="plan-title-lg mt-2">Pro Dialectic Tier</h2>
-            <p className="plan-sub-text">
-              $29.00 / month · Renews on November 01, 2026 via Mastercard •••• 4242
-            </p>
-          </div>
-          <div className="plan-upgrade-action">
-            <Link to="/checkout?plan=power&interval=monthly">
-              <Button variant="primary" icon="⚡">
-                Upgrade to Power Tier
-              </Button>
-            </Link>
-          </div>
-        </div>
-
-        <div className="plan-features-grid mt-6">
-          <div className="feat-check-item">
-            <span className="check-icon">✓</span>
-            <span>All 6 Frontier Model Architectures in Arena</span>
-          </div>
-          <div className="feat-check-item">
-            <span className="check-icon">✓</span>
-            <span>Full 4-Round Cross-Examination & Synthesis</span>
-          </div>
-          <div className="feat-check-item">
-            <span className="check-icon">✓</span>
-            <span>Permanent History & Unlimited ADR Saves</span>
-          </div>
-          <div className="feat-check-item">
-            <span className="check-icon">✓</span>
-            <span>Priority Queue Dialectic Processing</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Invoice History Table */}
-      <div className="clean-card-box mt-6">
-        <div className="box-title-row">
-          <h3 className="box-title">Invoice & Receipt History</h3>
-          <span className="text-muted text-xs">{invoices.length} billing records</span>
-        </div>
-
-        <div className="invoices-table-container mt-4">
-          <table className="clean-invoices-table">
-            <thead>
-              <tr>
-                <th>Invoice</th>
-                <th>Billing Date</th>
-                <th>Plan Tier</th>
-                <th>Amount</th>
-                <th>Status</th>
-                <th className="text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {invoices.map((inv) => (
-                <tr key={inv.id}>
-                  <td className="font-mono text-cyan">{inv.id}</td>
-                  <td>{inv.date}</td>
-                  <td>{inv.plan}</td>
-                  <td className="font-semibold">{inv.amount}</td>
-                  <td>
-                    <span className="paid-pill">Paid</span>
-                  </td>
-                  <td className="text-right">
-                    <button
-                      type="button"
-                      className="download-text-btn"
-                      onClick={() => handleDownloadInvoice(inv.id)}
-                    >
-                      Download PDF
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+    Promise.all([billingApi.invoices(), billingApi.subscription()]).then(([items, current]) => {
+      setInvoices(items); setSubscription(current)
+    }).catch((err) => setError(err.message))
+  }, [])
+  return <div className="billing-page-view">
+    <div className="page-header-row"><div><h1 className="page-title">Billing & Subscriptions</h1><p className="page-sub">Review your account plan and payment history.</p></div><Link to="/pricing"><Button variant="primary">View plans</Button></Link></div>
+    <div className="current-plan-box mt-6"><div className="plan-header-row"><div><span className="clean-tag-active">ACCOUNT PLAN</span><h2 className="plan-title-lg mt-2">{subscription?.planId || user?.tier || 'Free'}</h2><p className="plan-sub-text">{subscription ? `Status: ${subscription.status} · Renews ${new Date(subscription.currentPeriodEnd).toLocaleDateString()}` : 'No paid subscription is active on this account.'}</p></div></div></div>
+    {error && <p className="auth-alert error-alert mt-6" role="alert">{error}</p>}
+    <div className="clean-card-box mt-6"><div className="box-title-row"><h3 className="box-title">Invoice history</h3><span className="text-muted text-xs">{invoices.length} records</span></div>
+      {invoices.length ? <div className="invoices-table-container mt-4"><table className="clean-invoices-table"><thead><tr><th>Invoice</th><th>Date</th><th>Amount</th><th>Status</th><th>Receipt</th></tr></thead><tbody>{invoices.map((invoice) => <tr key={invoice.id}><td className="font-mono text-cyan">{invoice.number}</td><td>{new Date(invoice.date).toLocaleDateString()}</td><td>{new Intl.NumberFormat(undefined, { style: 'currency', currency: invoice.currency }).format(invoice.amountCents / 100)}</td><td>{invoice.status}</td><td>{invoice.pdfUrl ? <a href={invoice.pdfUrl} target="_blank" rel="noreferrer">Download</a> : '—'}</td></tr>)}</tbody></table></div> : !error && <p className="text-muted mt-4">No invoices are available.</p>}
     </div>
-  );
-};
+  </div>
+}

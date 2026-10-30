@@ -20,7 +20,6 @@ router = APIRouter(prefix="/saved", tags=["Saved Answers & ADRs"])
     response_model=PaginatedResponse[SavedAnswerResponse],
     status_code=status.HTTP_200_OK,
     summary="List Saved Answers",
-    openapi_extra={"x-implementation-status": "planned", "x-owner": "developer-4"},
 )
 async def list_saved(
     page: int = Query(1, ge=1),
@@ -46,7 +45,6 @@ async def list_saved(
     response_model=SavedAnswerResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Save Debate Synthesis",
-    openapi_extra={"x-implementation-status": "planned", "x-owner": "developer-4"},
 )
 async def save_answer(
     payload: SavedAnswerCreate,
@@ -61,7 +59,6 @@ async def save_answer(
     "/{saved_id}",
     status_code=status.HTTP_200_OK,
     summary="Remove Saved Answer",
-    openapi_extra={"x-implementation-status": "planned", "x-owner": "developer-4"},
 )
 async def delete_saved(
     saved_id: str,

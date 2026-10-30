@@ -54,6 +54,8 @@ class Settings(BaseSettings):
     COOKIE_SAMESITE: Literal["lax", "strict", "none"] = "lax"
     COOKIE_DOMAIN: Union[str, None] = None
     FRONTEND_URL: str = "http://localhost:3000"
+    GOOGLE_CLIENT_ID: str = ""
+    GOOGLE_CLIENT_SECRET: str = ""
 
     # Email delivery (console = log to stdout in development only)
     EMAIL_BACKEND: Literal["console", "smtp"] = "console"
@@ -75,6 +77,15 @@ class Settings(BaseSettings):
         default="postgresql+asyncpg://postgres:postgres@localhost:5432/sangram_ai",
         description="SQLAlchemy async connection URL using asyncpg driver.",
     )
+    # Provider credentials stay on the server and are never exposed to the browser.
+    OPENAI_API_KEY: str = ""
+    OPENROUTER_API_KEY: str = ""
+    ANTHROPIC_API_KEY: str = ""
+    GOOGLE_API_KEY: str = ""
+    GEMINI_MODEL: str = "gemini-3.5-flash"
+    GROQ_API_KEY: str = ""
+    MISTRAL_API_KEY: str = ""
+    XAI_API_KEY: str = ""
     DB_POOL_SIZE: int = 10
     DB_MAX_OVERFLOW: int = 20
     DB_POOL_TIMEOUT_SECONDS: float = 3.0

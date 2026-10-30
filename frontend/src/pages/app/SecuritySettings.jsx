@@ -1,19 +1,22 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useToast } from '../../context/ToastContext';
 import { Button } from '../../components/common/Button';
 import { Card } from '../../components/common/Card';
 import { Input } from '../../components/common/Input';
+import { userApi } from '../../services/api';
 
 export const SecuritySettings = () => {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
+  const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(false);
   const { showToast } = useToast();
 
-  const handlePasswordUpdate = (e) => {
+  useEffect(() => { userApi.sessions().then(setSessions).catch((err) => showToast(err.message, 'error')); }, []);
+
+  const handlePasswordUpdate = async (e) => {
     e.preventDefault();
     if (!newPassword || newPassword.length < 8) {
       showToast('New password must be at least 8 characters.', 'warn');
@@ -25,13 +28,14 @@ export const SecuritySettings = () => {
     }
 
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      await userApi.changePassword(currentPassword, newPassword);
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
       showToast('Password updated successfully!', 'success');
-    }, 600);
+    } catch (err) { showToast(err.message, 'error'); }
+    finally { setLoading(false); }
   };
 
   return (
@@ -100,14 +104,11 @@ export const SecuritySettings = () => {
               </p>
             </div>
             <Button
-              variant={twoFactorEnabled ? 'outline' : 'secondary'}
+              variant="outline"
               size="sm"
-              onClick={() => {
-                setTwoFactorEnabled(!twoFactorEnabled);
-                showToast(twoFactorEnabled ? '2FA disabled.' : '2FA enabled with authenticator app (mock).', 'info');
-              }}
+              disabled
             >
-              {twoFactorEnabled ? 'Disable 2FA' : 'Enable 2FA'}
+              Not available yet
             </Button>
           </div>
         </Card>
@@ -121,10 +122,10 @@ export const SecuritySettings = () => {
             <div className="session-item">
               <span className="session-icon">💻</span>
               <div className="session-info">
-                <span className="device-name">Chrome on Windows (Current Session)</span>
-                <span className="device-loc">Bangalore, India · IP 103.21.244.18</span>
+                <span className="device-name">{sessions[0]?.user_agent || 'Signed-in session'}</span>
+                <span className="device-loc">{sessions[0]?.ip_address || 'Location unavailable'}</span>
               </div>
-              <span className="active-pill">Active Now</span>
+              <span className="active-pill">{sessions[0]?.is_current ? 'Current' : 'Active'}</span>
             </div>
           </div>
         </Card>
@@ -132,3 +133,4 @@ export const SecuritySettings = () => {
     </div>
   );
 };
+

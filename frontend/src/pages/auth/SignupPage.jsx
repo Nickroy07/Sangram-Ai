@@ -5,6 +5,7 @@ import { useToast } from '../../context/ToastContext';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 import { Logo } from '../../components/common/Logo';
+import { GoogleSignInButton } from '../../components/common/GoogleSignInButton';
 
 export const SignupPage = () => {
   const [name, setName] = useState('');
@@ -137,6 +138,12 @@ export const SignupPage = () => {
           Create Free Account
         </Button>
       </form>
+
+      <div className="auth-divider">
+        <span>OR</span>
+      </div>
+
+      <GoogleSignInButton text="Sign Up with Google" />
 
       <div className="auth-box-footer">
         <span>Already have an account? </span>

@@ -7,26 +7,26 @@ export const HowItWorksPage = () => {
     {
       num: '01',
       title: 'Select Combatant Models',
-      desc: 'Pick the models whose perspectives you want to juxtapose. Choose between OpenAI (ChatGPT), Anthropic (Claude), Google (Gemini), Meta (Llama), Mistral AI, or xAI (Grok). Optionally assign cognitive archetypes like "The Pragmatic Engineer" or "The Devil’s Advocate" to enforce divergent thinking.',
-      visual: 'Model Selection Matrix: GPT-5 (Thesis) vs Claude 4.5 (Challenger)'
+      desc: 'Choose two different model profiles from the live catalog. A model is selectable when its provider is configured on the backend. You can also assign cognitive archetypes to each participant.',
+      visual: 'Choose two available models and optional archetypes'
     },
     {
       num: '02',
       title: 'Submit Question & Context',
-      desc: 'Input your core question alongside system constraints, code snippets, or business parameters. The Arena distributes the query simultaneously to all selected fighter nodes with zero mutual knowledge in the initial round.',
+      desc: 'Enter your question and optional context. The backend sends the prompt to each selected provider and stores the resulting battle in your account.',
       visual: 'Question Prompt + Optional Boundary Criteria'
     },
     {
       num: '03',
       title: 'Adversarial Debate & Cross-Examination',
-      desc: 'The models enter the dialectic chamber. Round 1 yields independent claims. In Round 2, each model reads the others’ arguments, pointing out logical fallacies, edge-case vulnerabilities, and operational taxes. In Round 3, models revise their stances in light of legitimate criticisms.',
-      visual: 'Round 1 Claims → Round 2 Cross-Examine → Round 3 Defense'
+      desc: 'The models exchange opening positions, counterarguments, rebuttals, and final positions. Each response is based on the battle context available to that provider call.',
+      visual: 'Opening → Counterarguments → Rebuttals → Final positions'
     },
     {
       num: '04',
       title: 'Consolidated Synthesis & Verdict',
-      desc: 'Our Dialectic Engine analyzes convergence points across all rounds. It filters out rhetorical posturing, isolates irreconcilable trade-offs, computes an objective consensus score, and outputs one single actionable verdict.',
-      visual: 'Consensus Score (94%) + Unified Decision + Trade-off Matrix'
+      desc: 'The backend asks the selected synthesis model to produce a written recommendation that separates points of agreement from unresolved trade-offs. A numeric consensus score is not currently calculated.',
+      visual: 'Unified decision + trade-off summary'
     }
   ];
 
@@ -64,7 +64,7 @@ export const HowItWorksPage = () => {
 
         <div className="interactive-try-banner mt-12 text-center">
           <h3>Experience the Battle in Real Time</h3>
-          <p>Try our interactive prototype with sample architectural debates.</p>
+          <p>Start a battle with the AI providers enabled for your account.</p>
           <div className="mt-4">
             <Link to="/app/arena/new">
               <Button variant="primary" size="lg" icon="⚔">
@@ -77,3 +77,4 @@ export const HowItWorksPage = () => {
     </div>
   );
 };
+

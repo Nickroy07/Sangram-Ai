@@ -8,7 +8,7 @@ Provides dependencies for:
 
 import logging
 from typing import AsyncGenerator, Optional
-from fastapi import Cookie, Depends, Header
+from fastapi import Cookie, Depends, Header, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import AppException, AuthenticationError, ModuleNotImplementedError
@@ -26,6 +26,12 @@ from app.schemas.auth import CurrentPrincipal
 from app.services.auth_service import AuthService
 from app.services.email import IEmailSender, build_email_sender
 from app.services.user_service import UserService
+from app.services.model_gateway import ModelGatewayService
+from app.services.battle_service import BattleService
+from app.services.saved_service import SavedAnswerService
+from app.services.battle_stream_service import BattleStreamService
+from app.services.billing_service import BillingService
+from app.services.usage_service import UsageService
 
 
 async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
@@ -52,19 +58,25 @@ def get_user_service(db: AsyncSession = Depends(get_db_session)) -> IUserService
     return UserService(db)
 
 
-def extract_token(authorization: Optional[str], session_cookie: Optional[str]) -> Optional[str]:
-    """Bearer header wins; otherwise the HttpOnly session cookie."""
+def extract_token(
+    authorization: Optional[str],
+    session_cookie: Optional[str],
+    query_token: Optional[str] = None,
+) -> Optional[str]:
+    """Bearer header wins; then query parameter; otherwise the HttpOnly session cookie."""
     if authorization:
         parts = authorization.strip().split()
         if len(parts) == 2 and parts[0].lower() == "bearer":
             return parts[1]
-        return None
+    if query_token and query_token.strip():
+        return query_token.strip()
     return session_cookie or None
 
 
 async def get_current_principal(
     authorization: Optional[str] = Header(None, alias="Authorization"),
     session_cookie: Optional[str] = Cookie(None, alias="sangram_session"),
+    query_token: Optional[str] = Query(None, alias="token"),
     auth_service: IAuthService = Depends(get_auth_service),
 ) -> CurrentPrincipal:
     """Authenticates caller identity (fails closed).
@@ -73,7 +85,7 @@ async def get_current_principal(
     revoked/expired and that the user is active. Any failure is a 401 AUTH_FAILED.
     Tests inject principals via app.dependency_overrides[get_current_principal].
     """
-    token = extract_token(authorization, session_cookie)
+    token = extract_token(authorization, session_cookie, query_token)
     if not token:
         raise AuthenticationError(
             message="Authentication credentials were not provided. Please log in.",
@@ -105,18 +117,18 @@ async def get_optional_principal(
 # ------------------------------------------------------------------------------
 
 def get_model_gateway_service() -> IModelGatewayService:
-    """Returns IModelGatewayService implementation or raises 501."""
-    raise ModuleNotImplementedError(module_name="AI Provider Gateway", owner="Developer 3")
+    """Provider gateway; it fails clearly when a selected provider is not configured."""
+    return ModelGatewayService()
 
 
-def get_battle_service() -> IBattleService:
-    """Returns IBattleService implementation or raises 501."""
-    raise ModuleNotImplementedError(module_name="Dialectic Battles Orchestrator", owner="Developer 4")
+def get_battle_service(db: AsyncSession = Depends(get_db_session)) -> IBattleService:
+    """Persists and orchestrates real provider-backed battles."""
+    return BattleService(db)
 
 
 def get_battle_stream_service() -> IBattleStreamService:
-    """Returns IBattleStreamService implementation or raises 501."""
-    raise ModuleNotImplementedError(module_name="Battle Event Streaming (SSE)", owner="Developer 4")
+    """Streams persisted battle progress using the contract SSE event vocabulary."""
+    return BattleStreamService()
 
 
 def get_share_service() -> IShareService:
@@ -124,16 +136,16 @@ def get_share_service() -> IShareService:
     raise ModuleNotImplementedError(module_name="Share Links", owner="Developer 4")
 
 
-def get_saved_answer_service() -> ISavedAnswerService:
-    """Returns ISavedAnswerService implementation or raises 501."""
-    raise ModuleNotImplementedError(module_name="Saved Answers & ADRs", owner="Developer 4")
+def get_saved_answer_service(db: AsyncSession = Depends(get_db_session)) -> ISavedAnswerService:
+    """Returns the database-backed saved-answer library."""
+    return SavedAnswerService(db)
 
 
-def get_billing_service() -> IBillingService:
-    """Returns IBillingService implementation or raises 501."""
-    raise ModuleNotImplementedError(module_name="Billing & Payments Gateway", owner="Developer 5")
+def get_billing_service(db: AsyncSession = Depends(get_db_session)) -> IBillingService:
+    """Returns the database-backed billing service."""
+    return BillingService(db)
 
 
-def get_usage_service() -> IUsageService:
-    """Returns IUsageService implementation or raises 501."""
-    raise ModuleNotImplementedError(module_name="Usage & Quota Entitlements", owner="Developer 5")
+def get_usage_service(db: AsyncSession = Depends(get_db_session)) -> IUsageService:
+    """Returns the database-backed usage tracking service."""
+    return UsageService(db)

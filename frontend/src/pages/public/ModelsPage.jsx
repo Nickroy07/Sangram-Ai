@@ -1,9 +1,13 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { models } from '../../data/models';
+import { catalogApi } from '../../services/api';
+import { models as modelStyles } from '../../data/models';
 import { Button } from '../../components/common/Button';
 
 export const ModelsPage = () => {
+  const [models, setModels] = useState([]);
+  const [loadError, setLoadError] = useState('');
+  useEffect(() => { catalogApi.models().then(setModels).catch((error) => setLoadError(error.message)); }, []);
   const [selectedModels, setSelectedModels] = useState(['chatgpt', 'claude']);
   const [activeFilter, setActiveFilter] = useState('all');
 
@@ -57,7 +61,7 @@ export const ModelsPage = () => {
           <span className="section-tag">CATALOG & PROFILES</span>
           <h1 className="page-hero-title">The Six Combatants of Sangram AI</h1>
           <p className="page-hero-sub">
-            Learn the distinct epistemic architectures and strengths of each model in the arena. Select models below to simulate an arena matchup.
+            Compare the models enabled for Sangram AI battles. Availability depends on the provider integrations configured for the service.
           </p>
         </div>
       </div>
@@ -82,6 +86,7 @@ export const ModelsPage = () => {
         </div>
 
         {/* Models Grid */}
+        {loadError && <p className="auth-alert error-alert" role="alert">{loadError}</p>}
         <div className="models-full-grid">
           {models.map((m) => {
             const isSelected = selectedModels.includes(m.id);
@@ -91,11 +96,11 @@ export const ModelsPage = () => {
               <div
                 key={m.id}
                 className={`model-detail-card ${isSelected ? 'is-selected' : ''}`}
-                style={{ '--accent-color': m.accent.color }}
+                style={{ '--accent-color': modelStyles.find((item) => item.id === m.id)?.accent.color || '#5B9DFF' }}
               >
                 <div className="card-top-row">
                   <div className="model-brand-group">
-                    <span className="color-indicator" style={{ backgroundColor: m.accent.color }}></span>
+                    <span className="color-indicator" style={{ backgroundColor: modelStyles.find((item) => item.id === m.id)?.accent.color || '#5B9DFF' }}></span>
                     <div>
                       <h3 className="model-title-text">{m.name}</h3>
                       <span className="provider-name">{m.provider} · {m.modelLabel}</span>
@@ -132,7 +137,7 @@ export const ModelsPage = () => {
                   </div>
                   <div className="meta-item">
                     <span className="meta-key">Availability:</span>
-                    <span className="meta-status">Ready in Arena (Simulated Prototype)</span>
+                    <span className="meta-status">{m.is_available ? 'Available' : 'Provider key required'}</span>
                   </div>
                 </div>
               </div>
@@ -143,3 +148,4 @@ export const ModelsPage = () => {
     </div>
   );
 };
+

@@ -38,9 +38,9 @@ export const AboutPage = () => {
           </div>
 
           <div className="essay-card">
-            <h2 className="essay-title">Our Development Approach: Honest Prototype First</h2>
+            <h2 className="essay-title">A workspace for stronger decisions</h2>
             <p className="essay-paragraph">
-              We believe in transparent engineering. This phase of Sangram AI presents the complete frontend SaaS experience, interactive mock dialectic engines, and structured design system tokens.
+              Sangram AI brings multiple AI models into a shared debate. Each model makes a case, challenges the other, and contributes to a final recommendation you can review and save.
             </p>
             <p className="essay-paragraph">
               In future phases, live API provider endpoints, private enterprise LLM fine-tunes, and persistent cloud vector vaults will be integrated seamlessly behind our established service contracts.
@@ -68,3 +68,4 @@ export const AboutPage = () => {
     </div>
   );
 };
+

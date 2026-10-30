@@ -4,6 +4,7 @@ import { useToast } from '../../context/ToastContext';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 import { Logo } from '../../components/common/Logo';
+import { authApi } from '../../services/api';
 
 export const ResetPasswordPage = () => {
   const [newPassword, setNewPassword] = useState('');
@@ -13,7 +14,7 @@ export const ResetPasswordPage = () => {
   const { showToast } = useToast();
   const navigate = useNavigate();
 
-  const handleReset = (e) => {
+  const handleReset = async (e) => {
     e.preventDefault();
     setError('');
 
@@ -27,11 +28,11 @@ export const ResetPasswordPage = () => {
     }
 
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      showToast('Password updated! You can now log in.', 'success');
-      navigate('/auth/login');
-    }, 600);
+    const token = new URLSearchParams(window.location.search).get('token');
+    if (!token) { setError('The password reset link is invalid or expired. Request a new one.'); setLoading(false); return; }
+    try { await authApi.resetPassword(token, newPassword); showToast('Password updated. You can now sign in.', 'success'); navigate('/auth/login'); }
+    catch (err) { setError(err.message); }
+    finally { setLoading(false); }
   };
 
   return (

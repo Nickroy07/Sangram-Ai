@@ -1,30 +1,38 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { mockBattleService } from '../../services/mock/mockBattleService';
+import { battlesApi } from '../../services/api';
 import { Button } from '../../components/common/Button';
 
 export const HistoryPage = () => {
   const [battles, setBattles] = useState([]);
   const [search, setSearch] = useState('');
-  const [selectedTag, setSelectedTag] = useState('All');
+  const [selectedStatus, setSelectedStatus] = useState('All');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const fetchHistory = async () => {
-      const data = await mockBattleService.getRecentBattles();
-      setBattles(data);
-      setLoading(false);
+      try {
+        const response = await battlesApi.history();
+        setBattles(response.items || []);
+      } catch (err) { setError(err.message); }
+      finally { setLoading(false); }
     };
     fetchHistory();
   }, []);
 
-  const tags = ['All', 'Architecture', 'AI/ML', 'Databases', 'Product'];
+  const statuses = [
+    { id: 'All', label: 'All battles' },
+    { id: 'pending', label: 'Pending' },
+    { id: 'running', label: 'Running' },
+    { id: 'completed', label: 'Completed' },
+    { id: 'failed', label: 'Failed' }
+  ];
 
   const filtered = battles.filter(b => {
-    const matchesSearch = b.title.toLowerCase().includes(search.toLowerCase()) ||
-                          (b.summary && b.summary.toLowerCase().includes(search.toLowerCase()));
-    const matchesTag = selectedTag === 'All' || (b.tags && b.tags.includes(selectedTag));
-    return matchesSearch && matchesTag;
+    const matchesSearch = `${b.title || ''} ${b.summary || ''} ${(b.models || []).join(' ')}`.toLowerCase().includes(search.toLowerCase());
+    const matchesStatus = selectedStatus === 'All' || b.status === selectedStatus;
+    return matchesSearch && matchesStatus;
   });
 
   return (
@@ -51,14 +59,14 @@ export const HistoryPage = () => {
           />
         </div>
         <div className="tag-filter-pills">
-          {tags.map(t => (
+          {statuses.map(({ id, label }) => (
             <button
-              key={t}
+              key={id}
               type="button"
-              className={`tag-pill-btn ${selectedTag === t ? 'active' : ''}`}
-              onClick={() => setSelectedTag(t)}
+              className={`tag-pill-btn ${selectedStatus === id ? 'active' : ''}`}
+              onClick={() => setSelectedStatus(id)}
             >
-              {t}
+              {label}
             </button>
           ))}
         </div>
@@ -66,7 +74,7 @@ export const HistoryPage = () => {
 
       {/* Clean History List */}
       <div className="history-clean-list mt-6">
-        {filtered.length === 0 ? (
+        {loading ? <p className="text-muted">Loading your battle history…</p> : error ? <p className="auth-alert error-alert" role="alert">{error}</p> : filtered.length === 0 ? (
           <div className="empty-panel text-center py-8">
             <p className="text-muted">No battle logs match your search.</p>
           </div>

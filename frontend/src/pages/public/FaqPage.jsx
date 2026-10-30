@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { mockFaqs } from '../../data/mockFaqs';
+import { faqs } from '../../data/faqs';
 import { Button } from '../../components/common/Button';
 
 export const FaqPage = () => {
@@ -28,7 +28,7 @@ export const FaqPage = () => {
 
       <div className="section-container py-12 max-w-3xl mx-auto">
         <div className="faq-accordion-list">
-          {mockFaqs.map((faq, index) => {
+          {faqs.map((faq, index) => {
             const isOpen = openIndexes.includes(index);
             return (
               <div key={index} className={`faq-item ${isOpen ? 'open' : ''}`}>

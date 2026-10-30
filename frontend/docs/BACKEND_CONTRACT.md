@@ -1,19 +1,19 @@
 # SANGRAM AI — Backend Integration Contract
 
-The frontend is a deterministic prototype. This document defines the seam a
-real orchestration backend must fulfil to make it live. **No provider API keys
-may ever ship in this client** — the browser only ever talks to our own
-backend; the backend holds OpenAI/Google/Anthropic/etc. credentials.
+The frontend talks to the FastAPI backend through `src/services/apiClient.js`.
+**No provider API keys may ship in this client** — the backend holds provider
+credentials and makes model requests.
 
 ## Current frontend boundary
 
 | Module | Role | Swap point |
 | --- | --- | --- |
-| `src/services/battleService.js` | Deterministic mock battle generator | Replaced by backend-generated content |
-| `src/services/streamRunner.js` | Pacing engine that reveals finished content | Replaced by SSE/chunk consumption |
-| `src/components/*` | Render normalized `battle` objects only | No changes needed |
+| `src/services/apiClient.js` and `api.js` | Central API client and endpoint wrappers | `VITE_API_BASE_URL`, default `http://localhost:8000` |
+| `src/services/battleService.js` | Legacy local battle generator | Not used by the Arena workflow |
+| `src/services/api.js` | Battle creation, retrieval, history, and SSE | Uses backend response/event schemas below |
+| `src/components/*` | Render backend battle data | No provider keys in the browser |
 
-The UI consumes one normalized shape — `generateBattle()`'s return value:
+The backend returns one normalized battle shape:
 
 ```ts
 type Battle = {
@@ -24,8 +24,8 @@ type Battle = {
   roundSummaries: string[]           // one per round, used by export
   finalAnswer: string                // ONE consolidated answer
   insights: { a: string, b: string }
-  agreement: { score: number, note: string, label: string, demo: true }
-  source: 'local-mock' | 'backend'
+  agreement: { score: number|null, note: string|null, label: string, demo: false }|null
+  source: 'backend'
 }
 
 type BattleMessage = {
@@ -75,27 +75,20 @@ GET  /api/s/:token                      → read-only Battle snapshot
 
 `MISSING_CONFIG`, `API_FAILURE`, `TIMEOUT`, `RATE_LIMIT`, `AUTH_FAILED`,
 `NETWORK_OFFLINE`, `EMPTY_RESPONSE`, `SYNTHESIS_FAILED`.
-Each maps to a panel in `src/components/ErrorStates.jsx`; `retryable` controls
-whether the Retry button appears. `src/services/streamRunner.js` already
-implements the same event vocabulary (`onUpdate`/`onFinish`) used by the mock;
-a backend adapter just feeds real chunks into it.
+The API client shows readable server, network, and timeout errors. Battle
+updates are consumed from the backend SSE endpoint by `subscribeBattle()`.
 
 ## Agreement score
 
-Today: fixed per-template demo estimates labelled "Demo agreement estimate".
-Real version: backend computes convergence (e.g. claim-graph overlap between
-final positions) and must send `{score, method, computedAt}`; the UI only
-displays the value and its explanation — the client never invents scores.
+No numeric agreement score is currently computed. The backend returns a null
+score with an explanatory note; the client does not invent one.
 
 ## Share links
 
-The prototype encodes only `{question, modelA, modelB}` into a URL fragment
-and re-runs the deterministic local engine on visit (`shareLink.js`). No
-transcript, no user data, no secrets in URLs. With the backend above, replace
-the fragment flow with `POST /api/shares` tokens; the Results share button is
-the only call site.
+Share API routes exist in the contract, but the backend share service is not
+implemented and currently returns 501. The live battle UI does not present
+client-generated links as persisted shared records.
 
 ## Timestamps
 
-The mock deliberately fabricates none. A live backend may attach real
-`createdAt` per message; the UI will show them only as relative labels.
+Battle and message timestamps come from persisted backend records.

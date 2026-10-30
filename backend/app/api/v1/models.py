@@ -9,6 +9,7 @@ from fastapi import APIRouter
 
 from app.core.errors import NotFoundError
 from app.schemas.model import ArchetypeProfile, ModelAccent, ModelProfile
+from app.services.model_gateway import ModelGatewayService
 
 router = APIRouter(tags=["AI Model Catalog"])
 
@@ -197,13 +198,13 @@ ARCHETYPES_CATALOG: List[ArchetypeProfile] = [
 @router.get("/models", response_model=List[ModelProfile], summary="Get AI Combatant Models")
 async def list_models() -> List[ModelProfile]:
     """Returns the full catalog of combatant AI models."""
-    return MODELS_CATALOG
+    return await ModelGatewayService().get_active_models()
 
 
 @router.get("/models/{model_id}", response_model=ModelProfile, summary="Get Model Details")
 async def get_model(model_id: str) -> ModelProfile:
     """Retrieves metadata and accents for a specific AI model."""
-    for m in MODELS_CATALOG:
+    for m in await ModelGatewayService().get_active_models():
         if m.id.lower() == model_id.lower():
             return m
     raise NotFoundError(message=f"Model '{model_id}' was not found in catalog.")

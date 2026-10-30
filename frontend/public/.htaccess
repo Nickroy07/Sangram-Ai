@@ -1,0 +1,38 @@
+# ==============================================================================
+# SANGRAM AI — HOSTINGER WEB HOSTING APACHE REWRITE & SECURITY CONFIGURATION
+# ==============================================================================
+# Directs all React SPA route requests (e.g. /app/arena, /pricing) to index.html
+# while preserving static assets (.js, .css, .png, .ico, .svg).
+# ==============================================================================
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # Do not rewrite existing files or directories
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # Fallback to index.html for client-side React Router
+  RewriteRule ^ index.html [L]
+</IfModule>
+
+# Security Headers
+<IfModule mod_headers.c>
+  Header set X-Content-Type-Options "nosniff"
+  Header set X-Frame-Options "SAMEORIGIN"
+  Header set X-XSS-Protection "1; mode=block"
+  Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# Cache Static Assets
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType text/css "access plus 1 month"
+  ExpiresByType application/javascript "access plus 1 month"
+  ExpiresByType image/png "access plus 1 month"
+  ExpiresByType image/jpeg "access plus 1 month"
+  ExpiresByType image/svg+xml "access plus 1 month"
+  ExpiresByType image/x-icon "access plus 1 year"
+</IfModule>

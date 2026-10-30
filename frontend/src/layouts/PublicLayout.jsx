@@ -14,9 +14,8 @@ export const PublicLayout = () => {
 
   return (
     <div className="public-layout">
-      {/* Top Banner Notice: Honest Prototype */}
       <div className="public-top-banner">
-        <span>⚡ Welcome to Sangram AI. Different Minds. One Arena. Live interactive dialectic prototype.</span>
+        <span>✦ Sangram AI — Different Minds. One Arena. Compare models. Make better decisions.</span>
         <Link to="/app/arena/new" className="banner-link">Try Live Arena →</Link>
       </div>
 
@@ -129,7 +128,7 @@ export const PublicLayout = () => {
                 <li><Link to="/about">About Sangram AI</Link></li>
                 <li><Link to="/faq">Frequently Asked Questions</Link></li>
                 <li><Link to="/contact">Contact Support</Link></li>
-                <li><a href="/neural-landing.html" target="_blank" rel="noreferrer">Motion Series Hero</a></li>
+                <li><Link to="/features">Product Features</Link></li>
               </ul>
             </div>
 
@@ -139,6 +138,7 @@ export const PublicLayout = () => {
                 <li><Link to="/privacy">Privacy Policy</Link></li>
                 <li><Link to="/terms">Terms of Service</Link></li>
                 <li><Link to="/refund-policy">Refund Policy</Link></li>
+                <li><Link to="/cookie-policy">Cookie Policy</Link></li>
               </ul>
             </div>
           </div>
@@ -146,8 +146,7 @@ export const PublicLayout = () => {
           <div className="footer-bottom">
             <span className="copyright">© 2026 Sangram AI. All rights reserved.</span>
             <div className="footer-bottom-badges">
-              <span className="badge-honest">Dialectic AI SaaS Prototype</span>
-              <span className="badge-honest">No Fake Stats</span>
+              <span className="badge-honest">Different Minds. One Arena.</span>
             </div>
           </div>
         </div>

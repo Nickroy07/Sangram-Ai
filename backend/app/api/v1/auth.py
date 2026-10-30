@@ -21,6 +21,7 @@ from app.schemas.auth import (
     ConfirmEmailChangeRequest,
     CurrentPrincipal,
     ForgotPasswordRequest,
+    GoogleLoginRequest,
     LoginRequest,
     RegisterRequest,
     ResetPasswordRequest,
@@ -40,10 +41,11 @@ def _client_meta(request: Request) -> dict:
 
 def _set_auth_cookies(response: Response, tokens: TokenResponse) -> TokenResponse:
     s = get_settings()
+    is_test = s.ENVIRONMENT == "test"
     common = dict(
         httponly=True,
-        secure=s.COOKIE_SECURE,
-        samesite=s.COOKIE_SAMESITE,
+        secure=False if is_test else s.COOKIE_SECURE,
+        samesite="lax" if is_test else s.COOKIE_SAMESITE,
         domain=s.COOKIE_DOMAIN,
     )
     response.set_cookie(
@@ -97,6 +99,18 @@ async def login(
     auth_service: IAuthService = Depends(get_auth_service),
 ) -> TokenResponse:
     tokens = await auth_service.authenticate(payload, **_client_meta(request))
+    return _set_auth_cookies(response, tokens)
+
+
+@router.post("/google", response_model=TokenResponse, summary="Google Sign-In")
+async def google_login(
+    payload: GoogleLoginRequest,
+    request: Request,
+    response: Response,
+    auth_service: IAuthService = Depends(get_auth_service),
+) -> TokenResponse:
+    """Verifies Google Identity Services ID token and establishes application session."""
+    tokens = await auth_service.authenticate_google(payload.credential, **_client_meta(request))
     return _set_auth_cookies(response, tokens)
 
 

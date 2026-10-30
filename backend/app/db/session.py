@@ -8,7 +8,7 @@ import asyncio
 import logging
 import time
 from typing import AsyncGenerator, Optional, Tuple
-from sqlalchemy import text
+from sqlalchemy import event, text
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -29,14 +29,27 @@ def get_engine() -> AsyncEngine:
     global _engine
     if _engine is None:
         settings = get_settings()
-        _engine = create_async_engine(
-            settings.DATABASE_URL,
-            echo=settings.DEBUG,
-            pool_size=settings.DB_POOL_SIZE,
-            max_overflow=settings.DB_MAX_OVERFLOW,
-            pool_timeout=settings.DB_POOL_TIMEOUT_SECONDS,
-            pool_pre_ping=True,
-        )
+        kwargs = {
+            "echo": settings.DEBUG,
+            "pool_pre_ping": True,
+        }
+        is_sqlite = "sqlite" in settings.DATABASE_URL
+        if is_sqlite:
+            kwargs["connect_args"] = {"timeout": 30.0}
+        else:
+            kwargs["pool_size"] = settings.DB_POOL_SIZE
+            kwargs["max_overflow"] = settings.DB_MAX_OVERFLOW
+            kwargs["pool_timeout"] = settings.DB_POOL_TIMEOUT_SECONDS
+
+        _engine = create_async_engine(settings.DATABASE_URL, **kwargs)
+
+        if is_sqlite:
+            @event.listens_for(_engine.sync_engine, "connect")
+            def _set_sqlite_pragma(dbapi_conn, _):
+                cursor = dbapi_conn.cursor()
+                cursor.execute("PRAGMA journal_mode=WAL")
+                cursor.execute("PRAGMA busy_timeout=30000")
+                cursor.close()
     return _engine
 
 

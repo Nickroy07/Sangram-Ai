@@ -3,6 +3,7 @@
 from app.schemas.auth import (
     CurrentPrincipal,
     ForgotPasswordRequest,
+    GoogleLoginRequest,
     LoginRequest,
     RegisterRequest,
     ResetPasswordRequest,

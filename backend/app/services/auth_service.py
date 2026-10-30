@@ -12,6 +12,7 @@ import logging
 from datetime import timedelta
 from typing import List, Optional
 
+import httpx
 import jwt
 from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
@@ -160,6 +161,75 @@ class AuthService:
             raise AuthenticationError("This account is disabled.")
         if security.needs_rehash(user.password_hash):
             user.password_hash = security.hash_password(credentials.password)
+        return await self._issue_session(user, user_agent, ip_address)
+
+    async def authenticate_google(
+        self,
+        credential: str,
+        user_agent: Optional[str] = None,
+        ip_address: Optional[str] = None,
+    ) -> TokenResponse:
+        """Verifies Google ID Token via Google's tokeninfo endpoint, creates or resolves user account, and issues session."""
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                res = await client.get(
+                    "https://oauth2.googleapis.com/tokeninfo",
+                    params={"id_token": credential.strip()},
+                )
+                if res.status_code != 200:
+                    logger.warning(f"Google tokeninfo validation failed with status {res.status_code}: {res.text}")
+                    raise AuthenticationError("Google authentication failed. Invalid or expired token.")
+                data = res.json()
+        except httpx.RequestError as exc:
+            logger.error(f"Network error contacting Google OAuth tokeninfo: {exc}")
+            raise AuthenticationError("Could not reach Google authentication services. Please try again.")
+
+        # Validate issuer
+        iss = data.get("iss", "")
+        if iss not in ("accounts.google.com", "https://accounts.google.com"):
+            logger.warning(f"Invalid Google token issuer: {iss}")
+            raise AuthenticationError("Invalid Google credential issuer.")
+
+        # Validate audience if GOOGLE_CLIENT_ID is configured and aud is present
+        client_id = self.settings.GOOGLE_CLIENT_ID
+        if client_id and data.get("aud") and data.get("aud") != client_id:
+            logger.warning(f"Google token audience mismatch: {data.get('aud')} != {client_id}")
+            raise AuthenticationError("Google credential was not issued for this application.")
+
+        raw_email = data.get("email")
+        if not raw_email:
+            raise AuthenticationError("Google account does not contain a verified email address.")
+        email = normalize_email(raw_email)
+
+        # Lookup or create user
+        user = (await self.db.execute(select(User).where(User.email == email))).scalar_one_or_none()
+        if user is None:
+            # Create user and profile
+            user = User(
+                email=email,
+                password_hash=security.hash_password(security.new_opaque_token()),
+                role="user",
+                is_active=True,
+                is_verified=True,
+            )
+            self.db.add(user)
+            await self.db.flush()
+
+            name = data.get("name") or data.get("given_name") or email.split("@")[0]
+            profile = Profile(
+                user_id=user.id,
+                name=name[:100],
+                avatar_url=data.get("picture"),
+            )
+            self.db.add(profile)
+            await self.db.commit()
+        else:
+            if not user.is_active:
+                raise AuthenticationError("This account is disabled.")
+            if not user.is_verified:
+                user.is_verified = True
+                await self.db.commit()
+
         return await self._issue_session(user, user_agent, ip_address)
 
     async def verify_token(self, token: str) -> CurrentPrincipal:

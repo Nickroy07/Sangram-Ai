@@ -26,42 +26,42 @@ from app.schemas.billing import (
 
 router = APIRouter(tags=["Billing & Subscriptions"])
 
-# Baseline static plans matching frontend mockPlans.js (prices in USD cents)
+# Public plan catalog. Paid checkout and entitlements are not active yet.
 PLANS_CATALOG: List[PlanResponse] = [
     PlanResponse(
         id="free",
         name="Free Scout",
         badge=None,
-        description="Explore basic multi-model dialectic debates with community models.",
+        description="Use current battle and account features with configured model providers.",
         pricing=PlanPricing(monthlyCents=0, yearlyCents=0, currency="USD"),
-        features=["10 debates / month", "Standard response speed", "Obsidian Precision theme"],
+        features=["Two-model battles (two providers required)", "Account battle history", "Save completed answers"],
         monthlyBattleQuota=10,
     ),
     PlanResponse(
         id="pro",
         name="Pro Dialectic",
-        badge="Popular",
-        description="Full access to flagship models, 4-stage debates, and synthesis exports.",
+        badge=None,
+        description="Paid catalog tier. Checkout and plan entitlements are not enabled yet.",
         pricing=PlanPricing(monthlyCents=2900, yearlyCents=29000, currency="USD"),
-        features=["100 debates / month", "Flagship combatant models", "ADR export to Markdown", "Priority streaming"],
+        features=["Subscription activation unavailable", "Usage quotas are not enforced", "Provider access depends on backend configuration"],
         monthlyBattleQuota=100,
     ),
     PlanResponse(
         id="power",
         name="Power Thinker",
-        badge="Advanced",
-        description="High-volume debate capacity for research teams and technical architects.",
+        badge=None,
+        description="Paid catalog tier. Checkout and plan entitlements are not enabled yet.",
         pricing=PlanPricing(monthlyCents=7900, yearlyCents=79000, currency="USD"),
-        features=["500 debates / month", "All models & custom archetypes", "API access", "Priority support"],
+        features=["Subscription activation unavailable", "Usage quotas are not enforced", "Provider access depends on backend configuration"],
         monthlyBattleQuota=500,
     ),
     PlanResponse(
         id="team",
         name="Enterprise Team",
-        badge="Custom",
-        description="Dedicated tenancy, custom provider keys, and pooled organizational quotas.",
+        badge=None,
+        description="Enterprise catalog tier. Team billing and workspace features are not enabled yet.",
         pricing=PlanPricing(monthlyCents=19900, yearlyCents=199000, currency="USD"),
-        features=["Unlimited shared quota", "Bring Your Own Key (BYOK)", "SAML SSO", "Audit logs"],
+        features=["Team workspaces are not enabled", "SAML SSO is not enabled", "Audit logs are not available"],
         monthlyBattleQuota=999999,
     ),
 ]

@@ -1,8 +1,69 @@
-/* ==========================================================================
+/* ========================================================================== 
    SANGRAM AI — AUTHENTICATION & ROOT ARENA SHOWDOWN STYLES
    ========================================================================== */
 
 /* 1. Root Experience Layout */
+.auth-layout {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  overflow: hidden;
+  background: var(--bg-main, #050D1A);
+  color: var(--text-primary, #F5F8FF);
+}
+
+.auth-bg-ambient {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.auth-header,
+.auth-main,
+.auth-footer {
+  position: relative;
+  z-index: 1;
+}
+
+.auth-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 2rem;
+}
+
+.auth-main {
+  display: grid;
+  flex: 1;
+  place-items: center;
+  padding: 2rem 1rem;
+}
+
+.auth-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 2rem;
+  font-size: 0.8rem;
+}
+
+.auth-footer-links {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.auth-container {
+  width: min(100%, 28rem);
+}
+
+.auth-box {
+  position: relative;
+  z-index: 1;
+}
+
 .login-root-experience {
   position: relative;
   min-height: 100vh;

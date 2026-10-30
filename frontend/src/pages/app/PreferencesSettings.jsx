@@ -1,18 +1,28 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useToast } from '../../context/ToastContext';
 import { Button } from '../../components/common/Button';
 import { Card } from '../../components/common/Card';
+import { userApi } from '../../services/api';
 
 export const PreferencesSettings = () => {
-  const [theme, setTheme] = useState('obsidian'); // obsidian, deep-navy, midnight
+  const [theme, setTheme] = useState('obsidian');
   const [motion, setMotion] = useState('full'); // full, reduced
   const [autoSave, setAutoSave] = useState(true);
   const [showTopology, setShowTopology] = useState(true);
   const { showToast } = useToast();
 
-  const handleSave = () => {
-    showToast('Preferences updated and saved locally.', 'success');
+  const [loading, setLoading] = useState(false);
+  useEffect(() => { userApi.preferences().then((preferences) => { setTheme(preferences.theme || 'obsidian'); setMotion(preferences.motion || 'full'); }).catch((err) => showToast(err.message, 'error')); }, []);
+
+  const handleSave = async () => {
+    setLoading(true);
+    try {
+      await userApi.updatePreferences({ theme, motion });
+      localStorage.setItem('sangram_ui_preferences', JSON.stringify({ autoSave, showTopology }));
+      showToast('Preferences saved.', 'success');
+    } catch (err) { showToast(err.message, 'error'); }
+    finally { setLoading(false); }
   };
 
   return (
@@ -55,7 +65,7 @@ export const PreferencesSettings = () => {
               <button
                 type="button"
                 className={`theme-chip-btn ${theme === 'deep-navy' ? 'active' : ''}`}
-                onClick={() => setTheme('deep-navy')}
+                onClick={() => setTheme('navy')}
               >
                 <span>Deep Navy Atmosphere</span>
               </button>
@@ -105,7 +115,7 @@ export const PreferencesSettings = () => {
               <div>
                 <span className="setting-name">Auto-save completed debates to history</span>
                 <span className="setting-desc text-muted text-xs block">
-                  Automatically caches synthesized ADRs locally.
+                  Keep this interface preference on this device.
                 </span>
               </div>
               <input
@@ -118,7 +128,7 @@ export const PreferencesSettings = () => {
           </div>
 
           <div className="mt-8">
-            <Button variant="primary" onClick={handleSave}>
+            <Button variant="primary" loading={loading} onClick={handleSave}>
               Save Preferences
             </Button>
           </div>

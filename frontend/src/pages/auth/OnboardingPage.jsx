@@ -1,21 +1,29 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { Button } from '../../components/common/Button';
 import { Logo } from '../../components/common/Logo';
-import { models } from '../../data/models';
-import { archetypes } from '../../data/archetypes';
+import { catalogApi, userApi } from '../../services/api';
 
 export const OnboardingPage = () => {
   const [step, setStep] = useState(1);
   const [selectedRole, setSelectedRole] = useState('Engineer / Architect');
-  const [favoriteModels, setFavoriteModels] = useState(['chatgpt', 'claude']);
-  const [favoriteArchetype, setFavoriteArchetype] = useState('devils_advocate');
+  const [favoriteModels, setFavoriteModels] = useState([]);
+  const [favoriteArchetype, setFavoriteArchetype] = useState('');
+  const [models, setModels] = useState([]);
+  const [archetypes, setArchetypes] = useState([]);
+  const [saving, setSaving] = useState(false);
 
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
+
+  useEffect(() => { Promise.all([catalogApi.models(), catalogApi.archetypes()]).then(([modelList, archetypeList]) => {
+    setModels(modelList); setArchetypes(archetypeList);
+    setFavoriteModels(modelList.filter((model) => model.is_available).slice(0, 2).map((model) => model.id));
+    setFavoriteArchetype(archetypeList[0]?.id || '');
+  }).catch((err) => showToast(err.message, 'error')); }, []);
 
   const toggleModel = (id) => {
     if (favoriteModels.includes(id)) {
@@ -29,9 +37,13 @@ export const OnboardingPage = () => {
     }
   };
 
-  const handleFinish = () => {
-    showToast('Arena preferences saved! Entering War Room...', 'success');
-    navigate('/app');
+  const handleFinish = async () => {
+    setSaving(true);
+    try {
+      const updated = await userApi.completeOnboarding({ occupation: selectedRole, models: favoriteModels, archetype: favoriteArchetype });
+      setUser(updated); showToast('Preferences saved.', 'success'); navigate('/app');
+    } catch (err) { showToast(err.message, 'error'); }
+    finally { setSaving(false); }
   };
 
   const roles = [
@@ -95,8 +107,8 @@ export const OnboardingPage = () => {
               return (
                 <div
                   key={m.id}
-                  className={`model-pick-card ${selected ? 'picked' : ''}`}
-                  onClick={() => toggleModel(m.id)}
+                  className={`model-pick-card ${selected ? 'picked' : ''} ${!m.is_available ? 'unavailable' : ''}`}
+                  onClick={() => m.is_available && toggleModel(m.id)}
                 >
                   <div className="model-pick-top">
                     <span className="model-pick-dot" style={{ backgroundColor: m.accent.color }}></span>
@@ -137,7 +149,7 @@ export const OnboardingPage = () => {
                   <span className="arch-name">{arch.name}</span>
                   {favoriteArchetype === arch.id && <span className="arch-check">✓</span>}
                 </div>
-                <p className="arch-desc">{arch.desc}</p>
+                <p className="arch-desc">{arch.description}</p>
               </div>
             ))}
           </div>
@@ -146,7 +158,7 @@ export const OnboardingPage = () => {
             <Button variant="outline" onClick={() => setStep(2)}>
               ← Back
             </Button>
-            <Button variant="primary" onClick={handleFinish}>
+            <Button variant="primary" onClick={handleFinish} loading={saving} disabled={saving || favoriteModels.length < 2}>
               Enter Workspace Chamber 🚀
             </Button>
           </div>

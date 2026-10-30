@@ -11,6 +11,7 @@ from app.api.v1.billing import router as billing_router
 from app.api.v1.models import router as models_router
 from app.api.v1.saved import router as saved_router
 from app.api.v1.shares import router as shares_router
+from app.api.v1.support import router as support_router
 from app.api.v1.users import router as users_router
 
 api_v1_router = APIRouter()
@@ -23,3 +24,4 @@ api_v1_router.include_router(users_router)
 api_v1_router.include_router(models_router)
 api_v1_router.include_router(saved_router)
 api_v1_router.include_router(billing_router)
+api_v1_router.include_router(support_router)

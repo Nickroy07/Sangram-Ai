@@ -1,19 +1,21 @@
 import React, { useState } from 'react';
-import { NavLink, Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { NavLink, Link, Outlet, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/common/Button';
 import { Logo } from '../components/common/Logo';
 
 export const DashboardLayout = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, loading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
-    await logout();
-    navigate('/auth/login');
+    try { await logout(); } finally { navigate('/auth/login'); }
   };
+
+  if (loading) return <div className="arena-loading-screen py-16 text-center"><div className="btn-spinner mx-auto mb-4" /><p className="text-muted">Loading your workspace…</p></div>;
+  if (!user) return <Navigate to="/auth/login" replace state={{ from: location.pathname }} />;
 
   const getBreadcrumb = () => {
     const parts = location.pathname.split('/').filter(Boolean);
@@ -121,8 +123,8 @@ export const DashboardLayout = () => {
                 {user?.name ? user.name.charAt(0).toUpperCase() : 'A'}
               </div>
               <div className="user-meta">
-                <span className="user-name">{user?.name || 'Alex Vance'}</span>
-                <span className="user-tier">Pro Dialectic Tier</span>
+                <span className="user-name">{user.name}</span>
+                <span className="user-tier">{user.tier || 'Free'} plan</span>
               </div>
             </div>
             <button
@@ -157,10 +159,10 @@ export const DashboardLayout = () => {
           <div className="topbar-right">
             <div className="dialectic-status-pill">
               <span className="status-live-dot"></span>
-              <span>Dialectic Engine Online</span>
+              <span>Sangram AI Workspace</span>
             </div>
             <Link to="/app/billing" className="upgrade-pill-btn">
-              ⚡ Pro Tier
+              {user.tier?.toLowerCase() === 'free' ? 'View Plans' : (user.tier || 'Free') + ' Plan'}
             </Link>
             <Link to="/app/settings/profile" className="topbar-avatar" title="Settings">
               <div className="avatar-img-circle">

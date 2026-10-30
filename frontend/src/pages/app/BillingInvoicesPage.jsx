@@ -1,79 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { mockBillingService } from '../../services/mock/mockBillingService';
-import { useToast } from '../../context/ToastContext';
-import { Button } from '../../components/common/Button';
-import { Card } from '../../components/common/Card';
-import { Badge } from '../../components/common/Badge';
+import React, { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { billingApi } from '../../services/api'
+import { Button } from '../../components/common/Button'
+import { Card } from '../../components/common/Card'
 
 export const BillingInvoicesPage = () => {
-  const [invoices, setInvoices] = useState([]);
-  const { showToast } = useToast();
-
-  useEffect(() => {
-    const fetchInvoices = async () => {
-      const data = await mockBillingService.getInvoices();
-      setInvoices(data);
-    };
-    fetchInvoices();
-  }, []);
-
-  const handleDownload = (id) => {
-    showToast(`Downloading invoice receipt ${id} (simulated PDF)...`, 'info');
-  };
-
-  return (
-    <div className="billing-invoices-view">
-      <div className="page-header-row">
-        <div>
-          <h1 className="page-title">Invoice Records & Receipts</h1>
-          <p className="page-sub">Official billing statements and tax deduction receipts.</p>
-        </div>
-        <Link to="/app/billing">
-          <Button variant="outline">← Back to Overview</Button>
-        </Link>
-      </div>
-
-      <Card className="invoices-list-card mt-6">
-        <div className="table-responsive">
-          <table className="invoices-full-table">
-            <thead>
-              <tr>
-                <th>Invoice ID</th>
-                <th>Date</th>
-                <th>Description</th>
-                <th>Payment Method</th>
-                <th>Amount</th>
-                <th>Status</th>
-                <th>Download</th>
-              </tr>
-            </thead>
-            <tbody>
-              {invoices.map((inv) => (
-                <tr key={inv.id}>
-                  <td className="font-mono font-bold">{inv.id}</td>
-                  <td>{inv.date}</td>
-                  <td>{inv.description}</td>
-                  <td className="text-muted">{inv.method}</td>
-                  <td className="font-bold">{inv.amount}</td>
-                  <td>
-                    <Badge variant="success" size="sm">{inv.status}</Badge>
-                  </td>
-                  <td>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDownload(inv.id)}
-                    >
-                      Download PDF
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
-    </div>
-  );
-};
+  const [invoices, setInvoices] = useState([])
+  const [error, setError] = useState('')
+  useEffect(() => { billingApi.invoices().then(setInvoices).catch((e) => setError(e.message)) }, [])
+  return <div className="billing-invoices-view"><div className="page-header-row"><div><h1 className="page-title">Invoices & Receipts</h1><p className="page-sub">Invoices issued to your account.</p></div><Link to="/app/billing"><Button variant="outline">Back to billing</Button></Link></div>
+    {error && <p className="auth-alert error-alert mt-6" role="alert">{error}</p>}
+    <Card className="invoices-list-card mt-6">{invoices.length ? <div className="table-responsive"><table className="invoices-full-table"><thead><tr><th>Invoice</th><th>Date</th><th>Amount</th><th>Status</th><th>Receipt</th></tr></thead><tbody>{invoices.map((invoice) => <tr key={invoice.id}><td>{invoice.number}</td><td>{new Date(invoice.date).toLocaleDateString()}</td><td>{new Intl.NumberFormat(undefined, { style: 'currency', currency: invoice.currency }).format(invoice.amountCents / 100)}</td><td>{invoice.status}</td><td>{invoice.pdfUrl ? <a href={invoice.pdfUrl} target="_blank" rel="noreferrer">Download</a> : '—'}</td></tr>)}</tbody></table></div> : !error && <p className="text-muted">No invoices are available.</p>}</Card>
+  </div>
+}

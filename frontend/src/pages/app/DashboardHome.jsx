@@ -2,9 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { mockBattleService } from '../../services/mock/mockBattleService';
-import { mockSavedService } from '../../services/mock/mockSavedService';
-import { models } from '../../data/models';
+import { battlesApi, savedApi } from '../../services/api';
 import { Button } from '../../components/common/Button';
 import { Card } from '../../components/common/Card';
 
@@ -13,20 +11,23 @@ export const DashboardHome = () => {
   const { showToast } = useToast();
 
   const [recentBattles, setRecentBattles] = useState([]);
+  const [totalBattles, setTotalBattles] = useState(0);
   const [savedAnswers, setSavedAnswers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
 
   useEffect(() => {
     const loadData = async () => {
       try {
         const [battles, saved] = await Promise.all([
-          mockBattleService.getRecentBattles(),
-          mockSavedService.getSavedAnswers()
+          battlesApi.history(1, 4),
+          savedApi.list()
         ]);
-        setRecentBattles(battles.slice(0, 4));
+        setRecentBattles(battles.items || []);
+        setTotalBattles(battles.total || 0);
         setSavedAnswers(saved.slice(0, 3));
       } catch (e) {
-        console.error(e);
+        setLoadError(e.message);
       } finally {
         setLoading(false);
       }
@@ -67,22 +68,20 @@ export const DashboardHome = () => {
       <div className="dashboard-metrics-row">
         <div className="metric-box">
           <span className="metric-box-label">Battles Conducted</span>
-          <div className="metric-box-val">{user?.stats?.totalBattles || 142}</div>
-          <span className="metric-box-sub">Across 6 foundational models</span>
+          <div className="metric-box-val">{totalBattles}</div>
+          <span className="metric-box-sub">Total battles in your account</span>
         </div>
 
         <div className="metric-box">
           <span className="metric-box-label">Average Consensus</span>
-          <div className="metric-box-val text-cyan">94%</div>
-          <span className="metric-box-sub">Resolved across 419 trade-offs</span>
+          <div className="metric-box-val text-cyan">—</div>
+          <span className="metric-box-sub">Agreement is not calculated yet</span>
         </div>
 
         <div className="metric-box">
           <span className="metric-box-label">Monthly Credits</span>
-          <div className="metric-box-val">420 <span className="metric-unit">/ 1,000</span></div>
-          <div className="metric-mini-bar">
-            <div className="bar-fill" style={{ width: '42%' }}></div>
-          </div>
+          <div className="metric-box-val">{user?.tier || 'free'}</div>
+          <span className="metric-box-sub">Current account plan</span>
         </div>
       </div>
 
@@ -92,10 +91,12 @@ export const DashboardHome = () => {
         <div className="dash-column">
           <div className="column-title-bar">
             <h3 className="column-title">Recent Dialectic Battles</h3>
-            <Link to="/app/history" className="text-link-sm">View All ({recentBattles.length}) →</Link>
+            <Link to="/app/history" className="text-link-sm">View All ({totalBattles}) →</Link>
           </div>
 
           <div className="battles-clean-list">
+            {loadError && <p className="auth-alert error-alert" role="alert">{loadError}</p>}
+            {loading && <p className="text-muted">Loading account activity…</p>}
             {recentBattles.length === 0 ? (
               <Card className="empty-panel text-center py-6">
                 <p className="text-muted">No battles recorded yet.</p>
@@ -149,20 +150,20 @@ export const DashboardHome = () => {
               savedAnswers.map((s) => (
                 <div key={s.id} className="saved-clean-row">
                   <div className="saved-row-header">
-                    <h4 className="saved-row-title">{s.title}</h4>
+                      <h4 className="saved-row-title">{s.question}</h4>
                     <button
                       type="button"
                       className="copy-mini-btn"
-                      onClick={() => handleCopy(s.verdict)}
+                      onClick={() => handleCopy(s.finalAnswer)}
                       title="Copy Verdict"
                     >
                       📋 Copy
                     </button>
                   </div>
-                  <p className="saved-row-verdict">{s.verdict}</p>
+                  <p className="saved-row-verdict">{s.finalAnswer}</p>
                   <div className="saved-row-footer">
                     <span className="models-mini-tag">
-                      Models: {s.modelsUsed?.join(', ')}
+                      Models: {s.fighters?.join(', ')}
                     </span>
                     <Link to={`/app/arena/${s.battleId}`} className="text-link-xs">
                       Open Debate →

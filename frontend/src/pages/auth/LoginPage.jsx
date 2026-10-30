@@ -5,6 +5,7 @@ import { useToast } from '../../context/ToastContext';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 import { Logo } from '../../components/common/Logo';
+import { GoogleSignInButton } from '../../components/common/GoogleSignInButton';
 
 export const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -35,15 +36,6 @@ export const LoginPage = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleQuickDemo = async () => {
-    setEmail('alex.vance@sangram.ai');
-    setPassword('password123');
-    setLoading(true);
-    await login({ email: 'alex.vance@sangram.ai', password: 'password123' });
-    showToast('Loaded demo session for Alex Vance', 'info');
-    navigate('/app');
   };
 
   return (
@@ -99,11 +91,11 @@ export const LoginPage = () => {
         </Button>
       </form>
 
-      <div className="demo-helper-box">
-        <button type="button" className="demo-fill-btn" onClick={handleQuickDemo}>
-          ⚡ Auto-fill Demo Explorer Account
-        </button>
+      <div className="auth-divider">
+        <span>OR</span>
       </div>
+
+      <GoogleSignInButton text="Sign In with Google" />
 
       <div className="auth-box-footer">
         <span>Need an account? </span>
@@ -114,3 +106,4 @@ export const LoginPage = () => {
     </div>
   );
 };
+

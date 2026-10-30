@@ -29,6 +29,7 @@ import { ContactPage } from './pages/public/ContactPage';
 import { PrivacyPage } from './pages/public/PrivacyPage';
 import { TermsPage } from './pages/public/TermsPage';
 import { RefundPolicyPage } from './pages/public/RefundPolicyPage';
+import { CookiePolicyPage } from './pages/public/CookiePolicyPage';
 
 // App / Dashboard Pages
 import { DashboardHome } from './pages/app/DashboardHome';
@@ -88,6 +89,8 @@ export default function App() {
               <Route path="/privacy" element={<PrivacyPage />} />
               <Route path="/terms" element={<TermsPage />} />
               <Route path="/refund-policy" element={<RefundPolicyPage />} />
+              <Route path="/cookie-policy" element={<CookiePolicyPage />} />
+              <Route path="/cookies" element={<CookiePolicyPage />} />
             </Route>
 
             {/* SaaS Dashboard Shell (Wrapped in DashboardLayout) */}

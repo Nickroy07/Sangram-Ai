@@ -33,7 +33,6 @@ router = APIRouter(prefix="/battles", tags=["Dialectic Battles"])
     status_code=status.HTTP_201_CREATED,
     summary="Create Debate Battle",
     description="Initiates a new multi-model arena debate and reserves quota credits.",
-    openapi_extra={"x-implementation-status": "planned", "x-owner": "developer-4"},
 )
 async def create_battle(
     payload: BattleCreateRequest,
@@ -50,7 +49,6 @@ async def create_battle(
     status_code=status.HTTP_200_OK,
     summary="Get Battle By ID",
     description="Returns the full normalized Battle object matching frontend UI expectations.",
-    openapi_extra={"x-implementation-status": "planned", "x-owner": "developer-4"},
 )
 async def get_battle(
     battle_id: str,
@@ -69,18 +67,26 @@ async def get_battle(
         "round summaries, and final synthesis. See docs/BACKEND_CONTRACT.md."
     ),
     response_class=StreamingResponse,
-    openapi_extra={"x-implementation-status": "planned", "x-owner": "developer-4"},
 )
 async def stream_battle_events(
     battle_id: str,
     last_event_id: Optional[str] = Header(None, alias="Last-Event-ID"),
     principal: CurrentPrincipal = Depends(get_current_principal),
     stream_service: IBattleStreamService = Depends(get_battle_stream_service),
+    battle_service: IBattleService = Depends(get_battle_service),
 ) -> StreamingResponse:
     """SSE debate turn and synthesis stream. Owned by Developer 4."""
+    await battle_service.get_battle(battle_id=battle_id, user_id=principal.user_id)
     async def sse_generator():
-        async for event_name, data in stream_service.stream_events(battle_id, last_event_id):
-            yield f"event: {event_name}\ndata: {data}\n\n"
+        try:
+            async for event_name, data in stream_service.stream_events(battle_id, last_event_id, principal.user_id):
+                yield f"event: {event_name}\ndata: {data}\n\n"
+        except Exception as exc:
+            import json
+            import logging
+            logging.getLogger("sangram_ai.battles").exception("SSE stream exception: %s", exc)
+            yield f"event: battle.error\ndata: {json.dumps({'code': 'STREAM_ERROR', 'message': str(exc), 'retryable': True})}\n\n"
+            yield f"event: battle.done\ndata: {json.dumps({'battleId': battle_id})}\n\n"
 
     return StreamingResponse(
         sse_generator(),
@@ -99,7 +105,6 @@ async def stream_battle_events(
     status_code=status.HTTP_200_OK,
     summary="List Debate History",
     description="Lists past completed debate summaries for the authenticated user.",
-    openapi_extra={"x-implementation-status": "planned", "x-owner": "developer-4"},
 )
 async def list_battles(
     page: int = Query(1, ge=1),
@@ -125,7 +130,6 @@ async def list_battles(
     status_code=status.HTTP_200_OK,
     summary="Delete Battle",
     description="Deletes a battle record owned by the authenticated caller.",
-    openapi_extra={"x-implementation-status": "planned", "x-owner": "developer-4"},
 )
 async def delete_battle(
     battle_id: str,
@@ -141,7 +145,6 @@ async def delete_battle(
     "/{battle_id}/cancel",
     status_code=status.HTTP_200_OK,
     summary="Cancel In-Progress Battle",
-    openapi_extra={"x-implementation-status": "planned", "x-owner": "developer-4"},
 )
 async def cancel_battle(
     battle_id: str,
@@ -158,7 +161,6 @@ async def cancel_battle(
     response_model=BattleCreateResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Retry Failed Battle",
-    openapi_extra={"x-implementation-status": "planned", "x-owner": "developer-4"},
 )
 async def retry_battle(
     battle_id: str,

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { mockSavedService } from '../../services/mock/mockSavedService';
+import { savedApi } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import { Button } from '../../components/common/Button';
 
@@ -8,13 +8,14 @@ export const SavedAnswersPage = () => {
   const [savedItems, setSavedItems] = useState([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const { showToast } = useToast();
 
   useEffect(() => {
     const fetchSaved = async () => {
-      const data = await mockSavedService.getSavedAnswers();
-      setSavedItems(data);
-      setLoading(false);
+      try { setSavedItems(await savedApi.list()); }
+      catch (err) { setError(err.message); }
+      finally { setLoading(false); }
     };
     fetchSaved();
   }, []);
@@ -25,14 +26,16 @@ export const SavedAnswersPage = () => {
   };
 
   const handleRemove = async (id) => {
-    await mockSavedService.removeAnswer(id);
-    setSavedItems(prev => prev.filter(i => i.id !== id));
-    showToast('Removed from saved answers.', 'info');
+    try {
+      await savedApi.remove(id);
+      setSavedItems(prev => prev.filter(i => i.id !== id));
+      showToast('Removed from saved answers.', 'info');
+    } catch (err) { showToast(err.message, 'error'); }
   };
 
   const filtered = savedItems.filter(item =>
-    item.title.toLowerCase().includes(search.toLowerCase()) ||
-    item.question.toLowerCase().includes(search.toLowerCase())
+    (item.question || '').toLowerCase().includes(search.toLowerCase()) ||
+    (item.finalAnswer || '').toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -57,7 +60,7 @@ export const SavedAnswersPage = () => {
       </div>
 
       <div className="saved-clean-list mt-6">
-        {filtered.length === 0 ? (
+        {loading ? <p className="text-muted">Loading saved answers…</p> : error ? <p className="auth-alert error-alert" role="alert">{error}</p> : filtered.length === 0 ? (
           <div className="empty-panel text-center py-8">
             <p className="text-muted">No saved answers yet. In any arena debate, click 'Save as ADR Record'.</p>
           </div>
@@ -66,7 +69,7 @@ export const SavedAnswersPage = () => {
             <div key={item.id} className="saved-item-box">
               <div className="saved-box-header">
                 <div>
-                  <h3 className="saved-item-title">{item.title}</h3>
+                  <h3 className="saved-item-title">{item.question}</h3>
                   <p className="saved-item-q">"{item.question}"</p>
                 </div>
                 <button
@@ -81,15 +84,15 @@ export const SavedAnswersPage = () => {
               </div>
 
               <div className="saved-box-verdict">
-                <p>{item.verdict}</p>
+                <p>{item.finalAnswer}</p>
               </div>
 
               <div className="saved-box-footer">
                 <span className="models-mini-tag">
-                  Models: {item.modelsUsed?.join(', ')}
+                  Models: {item.fighters?.join(', ')}
                 </span>
                 <div className="saved-footer-actions">
-                  <Button variant="outline" size="sm" onClick={() => handleCopy(item.verdict)}>
+                  <Button variant="outline" size="sm" onClick={() => handleCopy(item.finalAnswer)}>
                     📋 Copy Text
                   </Button>
                   <Link to={`/app/arena/${item.battleId}`}>

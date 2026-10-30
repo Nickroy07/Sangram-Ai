@@ -1,22 +1,35 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { models } from '../../data/models';
-import { archetypes } from '../../data/archetypes';
 import { useToast } from '../../context/ToastContext';
-import { mockBattleService } from '../../services/mock/mockBattleService';
+import { catalogApi, battlesApi } from '../../services/api';
 import { Button } from '../../components/common/Button';
 
 export const ArenaNewPage = () => {
-  const [modelA, setModelA] = useState('chatgpt');
-  const [modelB, setModelB] = useState('claude');
-  const [archetypeA, setArchetypeA] = useState('first_principles');
-  const [archetypeB, setArchetypeB] = useState('devils_advocate');
-  const [prompt, setPrompt] = useState('Microservices vs Modular Monolith for an early-stage B2B SaaS startup?');
+  const [models, setModels] = useState([]);
+  const [archetypes, setArchetypes] = useState([]);
+  const [catalogError, setCatalogError] = useState('');
+  const [modelA, setModelA] = useState('');
+  const [modelB, setModelB] = useState('');
+  const [archetypeA, setArchetypeA] = useState('');
+  const [archetypeB, setArchetypeB] = useState('');
+  const [prompt, setPrompt] = useState('');
   const [context, setContext] = useState('');
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
   const { showToast } = useToast();
+
+  useEffect(() => {
+    Promise.all([catalogApi.models(), catalogApi.archetypes()]).then(([modelList, archetypeList]) => {
+      setModels(modelList);
+      setArchetypes(archetypeList);
+      const available = modelList.filter((model) => model.is_available);
+      setModelA(available[0]?.id || '');
+      setModelB(available[1]?.id || '');
+      setArchetypeA(archetypeList[0]?.id || '');
+      setArchetypeB(archetypeList[1]?.id || archetypeList[0]?.id || '');
+    }).catch((error) => setCatalogError(error.message));
+  }, []);
 
   const samplePrompts = [
     {
@@ -46,16 +59,15 @@ export const ArenaNewPage = () => {
 
     try {
       setLoading(true);
-      const battle = await mockBattleService.createBattle({
+      const created = await battlesApi.create({
+        question: prompt.trim(),
         modelA,
         modelB,
         archetypeA,
         archetypeB,
-        prompt,
         context
       });
-      showToast('Combatants deployed to War Room!', 'success');
-      navigate(`/app/arena/${battle.id}`);
+      navigate(`/app/arena/${created.battleId}`);
     } catch (err) {
       showToast(err.message || 'Failed to start battle.', 'error');
     } finally {
@@ -73,6 +85,10 @@ export const ArenaNewPage = () => {
       </div>
 
       <form onSubmit={handleStartBattle} className="arena-setup-form mt-6">
+        {catalogError && <div className="auth-alert error-alert" role="alert">{catalogError}</div>}
+        {!catalogError && models.length > 0 && models.every((model) => !model.is_available) && (
+          <div className="auth-alert error-alert" role="status">No AI providers are configured yet. Add a provider key to the backend environment to enable battles.</div>
+        )}
         {/* Step 1: The Dilemma Input */}
         <div className="setup-card">
           <label className="field-label" htmlFor="prompt-input">
@@ -119,7 +135,7 @@ export const ArenaNewPage = () => {
                   onChange={(e) => setModelA(e.target.value)}
                 >
                   {models.map((m) => (
-                    <option key={m.id} value={m.id} disabled={m.id === modelB}>
+                    <option key={m.id} value={m.id} disabled={!m.is_available || m.id === modelB}>
                       {m.name} ({m.provider})
                     </option>
                   ))}
@@ -157,7 +173,7 @@ export const ArenaNewPage = () => {
                   onChange={(e) => setModelB(e.target.value)}
                 >
                   {models.map((m) => (
-                    <option key={m.id} value={m.id} disabled={m.id === modelA}>
+                    <option key={m.id} value={m.id} disabled={!m.is_available || m.id === modelA}>
                       {m.name} ({m.provider})
                     </option>
                   ))}
@@ -205,6 +221,7 @@ export const ArenaNewPage = () => {
             size="lg"
             className="w-full launch-battle-btn"
             loading={loading}
+            disabled={loading || !modelA || !modelB || Boolean(catalogError)}
             icon="⚔"
           >
             Launch Dialectic Battle

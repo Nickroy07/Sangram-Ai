@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useToast } from '../../context/ToastContext';
 import { Button } from '../../components/common/Button';
 import { Input, Textarea } from '../../components/common/Input';
+import { supportApi } from '../../services/api';
 
 export const ContactPage = () => {
   const [name, setName] = useState('');
@@ -13,7 +14,7 @@ export const ContactPage = () => {
 
   const { showToast } = useToast();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!name.trim() || !email.trim() || !message.trim()) {
       showToast('Please fill out all required contact fields.', 'warn');
@@ -21,11 +22,20 @@ export const ContactPage = () => {
     }
 
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      await supportApi.contact({
+        name: name.trim(),
+        email: email.trim(),
+        subject,
+        message: message.trim()
+      });
       setSubmitted(true);
-      showToast('Message sent! Our team will reply shortly.', 'success');
-    }, 600);
+      showToast('Message sent! Our engineering team will reply shortly.', 'success');
+    } catch (err) {
+      showToast(err.message || 'Failed to send message. Please try again.', 'error');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

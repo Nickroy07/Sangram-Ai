@@ -34,6 +34,19 @@ class IAuthService(Protocol):
         """
         ...
 
+    async def authenticate_google(
+        self,
+        credential: str,
+        user_agent: Optional[str] = None,
+        ip_address: Optional[str] = None,
+    ) -> TokenResponse:
+        """Verifies Google ID token and returns signed application session tokens.
+
+        Raises:
+            AuthenticationError: If token is invalid or verification fails.
+        """
+        ...
+
     async def register(self, payload: RegisterRequest) -> UserProfileResponse:
         """Registers a new user account, creates default profile, sends verification code.
         
